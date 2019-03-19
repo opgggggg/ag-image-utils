@@ -1,4 +1,4 @@
-#import "RNImageUtils.h"
+#import "AGImageUtils.h"
 
 @implementation AGImageUtils
 
