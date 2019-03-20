@@ -29,9 +29,18 @@ RCT_EXPORT_METHOD(crop:(NSString *) path
 
     CGRect cropTarget = CGRectMake(x, y, width, height);
     UIImage *targetImage = [UIImage imageWithContentsOfFile:path];
+    if (!targetImage) {
+        reject(@"Bad request", [NSString stringWithFormat:@"invalid source image path:%s", path], nil);
+        return;
+    }
+
     CGImageRef reference = CGImageCreateWithImageInRect([targetImage CGImage], cropTarget);
 
     UIImage *cropped = [UIImage imageWithCGImage:reference];
+    if (!cropped) {
+        reject(@"Bad request", [NSString stringWithFormat:@"invalid crop position:%d %d %d %d", x, y, width, height], nil);
+        return;
+    }
   
     if (width != destWidth || height != destHeight) {
         UIGraphicsBeginImageContext(CGSizeMake(destWidth, destHeight));
@@ -40,21 +49,18 @@ RCT_EXPORT_METHOD(crop:(NSString *) path
         UIGraphicsEndImageContext();
     }
 
-    NSData *rawImageData = nil;
+    NSData *rawData = nil;
     if ([format isEqual:@"png"]) {
-        rawImageData = UIImagePNGRepresentation(cropped);
+        rawData = UIImagePNGRepresentation(cropped);
     } else {
-        rawImageData = UIImageJPEGRepresentation(cropped, quality / 100.0);
+        rawData = UIImageJPEGRepresentation(cropped, quality / 100.0);
     }
-    CGImageRelease(reference);
 
-    NSError *error = nil;
-    NSURL *temporaryFileURL = [NSURL fileURLWithPath:savePath];
-    [rawImageData writeToURL:temporaryFileURL options:NSDataWritingAtomic error:&error];
-    if (error) {
-        reject(@"Failed to Save", @"Failed to save image", error);
+    CGImageRelease(reference);
+    if ([rawData writeToFile:savePath atomically:YES]) {
+        resolve(savePath);
     } else {
-        resolve([temporaryFileURL absoluteString]);
+        reject(@"Failed to Save", [@"Failed to save image" stringByAppendingString:savePath], nil);
     }
 }
 
