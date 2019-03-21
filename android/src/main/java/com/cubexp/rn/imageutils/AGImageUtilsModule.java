@@ -46,14 +46,10 @@ public class AGImageUtilsModule extends ReactContextBaseJavaModule {
             compressFormat = Bitmap.CompressFormat.WEBP;
         }
 
-        Matrix m = new Matrix();
+        Bitmap cropped = Bitmap.createBitmap(new BitmapFactory().decodeFile(path), x, y, width, height);
         if (width != destWidth || height != destHeight) {
-            final float sx = destWidth / (float) width;
-            final float sy = destHeight / (float) height;
-            m.setScale(sx, sy);
+            cropped = Bitmap.createScaledBitmap(cropped, destWidth, destHeight, true);
         }
-
-        Bitmap cropped = Bitmap.createBitmap(new BitmapFactory().decodeFile(path), x, y, width, height, m, true);
 
         FileOutputStream out = null;
         File dest = new File(savePath);
