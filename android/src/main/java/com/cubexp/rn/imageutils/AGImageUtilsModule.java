@@ -37,6 +37,22 @@ public class AGImageUtilsModule extends ReactContextBaseJavaModule {
         int destHeight = options.hasKey("dest_height") ? options.getInt("dest_height") : height;
         int quality = options.hasKey("quality") ? options.getInt("quality") : 100;
         String savePath = options.getString("save_path");
+        Bitmap source = new BitmapFactory().decodeFile(path);
+        if (options.hasKey("src_width")) {
+            float scale = source.getWidth() / (float)options.getInt("src_width");
+            x *= scale;
+            width *= scale;
+        }
+        if (options.hasKey("src_height")) {
+            float scale = source.getHeight() / (float)options.getInt("src_height");
+            y *= scale;
+            height *= scale;
+        }
+        Bitmap cropped = Bitmap.createBitmap(source, x, y, width, height);
+
+        if (width != destWidth || height != destHeight) {
+            cropped = Bitmap.createScaledBitmap(cropped, destWidth, destHeight, true);
+        }
 
         String format = options.hasKey("format") ? options.getString("format") : "jpg";
         Bitmap.CompressFormat compressFormat = Bitmap.CompressFormat.JPEG;
@@ -46,18 +62,13 @@ public class AGImageUtilsModule extends ReactContextBaseJavaModule {
             compressFormat = Bitmap.CompressFormat.WEBP;
         }
 
-        Bitmap cropped = Bitmap.createBitmap(new BitmapFactory().decodeFile(path), x, y, width, height);
-        if (width != destWidth || height != destHeight) {
-            cropped = Bitmap.createScaledBitmap(cropped, destWidth, destHeight, true);
-        }
-
         FileOutputStream out = null;
         File dest = new File(savePath);
 
         try {
             out = new FileOutputStream(dest);
             cropped.compress(compressFormat, quality, out);
-            promise.resolve(dest.getAbsolutePath());
+            promise.resolve(dest.getAbsolutePath() + ' ' + source.getWidth() + '/' + source.getHeight() + ' ' + x + '/' + y + ' ' + width + '/' + height + ' ' + destWidth + '/' + destHeight);
         } catch (Exception e) {
             promise.reject("Failed to save", "Failed to save to file", null);
         } finally {
